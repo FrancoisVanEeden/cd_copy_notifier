@@ -1,0 +1,41 @@
+#!/bin/bash
+# Detects when Rhythmbox is done copying a cd.
+# Notifies hosts on the LAN.
+# Modify the hosts variable with host names.
+# See experiments.odg for tuning thresh and period.
+
+iofile=/proc/`pgrep -x rhythmbox`/io
+feedme="Feed me CD's please."
+period=60 			#Complain and poll period
+port=2000
+hosts="host1 host2"
+thresh=31136 		  	#Bytes/(period seconds) experimentally determined
+thresh=$((thresh*period))	#Better than dividing in loop 
+
+getWriteBytes () {
+	cat $iofile | grep -w 'write_bytes:' | cut -d ' ' -f 2
+}
+
+unsent=1
+wprev=`getWriteBytes`
+while true ; do
+	sleep $period
+	wnow=`getWriteBytes`
+	delta=$((wnow-wprev))
+	wprev=$wnow
+	echo $delta bytes written. $thresh threshold. 
+	if [ $delta -le $thresh ] ; then
+		echo "$feedme"
+		if [ $unsent ] ; then 
+			echo Notifying remote hosts.
+			date >> cdcopylog	#Keep logs of completed jobs
+			for host in $hosts; do
+				echo "$feedme" | nc -N $host $port
+			done
+			unset unsent
+		fi
+	else
+		unsent=1 #Reset notify once
+	fi
+done
+

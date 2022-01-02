@@ -1,0 +1,8 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# Termux notification script when cd done copying
+
+port=2000
+while true ; do 
+  msg=`ncat -l 2000`
+  termux-notification --title "$msg"
+done

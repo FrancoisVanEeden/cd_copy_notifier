@@ -1,0 +1,5 @@
+#!/bin/bash
+#Simple script to listen for copy done notification.
+#Reads notifications out loud on ubuntu desktop.
+port=2000
+nc -lk $port | spd-say -e
